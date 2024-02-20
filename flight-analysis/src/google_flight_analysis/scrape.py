@@ -14,7 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 import time
 
-from google_flight_analysis.flight import *
+from .flight import *
 
 __all__ = ['Scrape', '_Scrape', 'ScrapeObjects']
 
@@ -33,7 +33,7 @@ def ScrapeObjects(objs, deep_copy = False):
 		objs = [objs]
 
 
-	chromedriver_autoinstaller.install() # check if chromedriver is installed correctly and on path
+	# chromedriver_autoinstaller.install() # check if chromedriver is installed correctly and on path
 	driver = webdriver.Chrome()
 	driver.maximize_window()
 
@@ -383,15 +383,15 @@ class _Scrape:
 	def _make_url(self):
 		urls = []
 		for i in range(len(self._date)):
-			# urls += [
-			# 	'https://www.google.com/travel/flights?hl=en&q=Flights%20to%20{org}%20from%20{dest}%20on%20{date}%20oneway'.format(
-			# 		dest = self._dest[i],
-			# 		org = self._origin[i],
-			# 		date = self._date[i]
-			# 	)
-			# ]
+			urls += [
+				'https://www.google.com/travel/flights?hl=en&q=Flights%20to%20{org}%20from%20{dest}%20on%20{date}%20oneway'.format(
+					dest = self._dest[i],
+					org = self._origin[i],
+					date = self._date[i]
+				)
+			]
 			pass
-		urls = ['https://www.google.com/travel/flights/search?tfs=CBwQAhokEgoyMDI0LTAzLTAzKAAyAlVBagcIARIDU0ZPcgcIARIDT1JEQAFIAXABggELCP___________wGYAQI&tfu=EgYIARABGAA&hl=en']
+		#urls = ['https://www.google.com/travel/flights/search?tfs=CBwQAhokEgoyMDI0LTAzLTAzKAAyAlVBagcIARIDU0ZPcgcIARIDT1JEQAFIAXABggELCP___________wGYAQI&tfu=EgYIARABGAA&hl=en']
 		return urls
 
 	@staticmethod
@@ -417,26 +417,28 @@ class _Scrape:
 		mid_start = res2.index("Price insights")
 		mid_end = -1
 		try:
-		    mid_end = res2.index("Other departing flights")+1
+			mid_end = res2.index("Other departing flights")+1
 		except:
-		    mid_end = res2.index("Other flights")+1
+			mid_end = res2.index("Other flights")+1
 		try:
 			end = [i for i, x in enumerate(res2) if (x.startswith('Hide') and x.endswith('flights'))][0]
 		except:
-			end  = [i for i, x in enumerate(res2) if x.endswith('more flights')][0]
+			try:
+				end  = [i for i, x in enumerate(res2) if x.endswith('more flights')][0]
+			except:
+				end = [i for i, x in enumerate(res2) if x.startswith('Language')][0] # this is a hacky way to get the end of the results maybe change later
 
 		res3 = res2[start:mid_start] + res2[mid_end:end]
-
+		# print(res3)
 		matches = [i for i, x in enumerate(res3) if len(x) > 2 and ((x[-2] != '+' and (x.endswith('PM') or x.endswith('AM')) and ':' in x) or x[-2] == '+')][::2]
 		flights = [Flight(date, res3[matches[i]:matches[i+1]]) for i in range(len(matches)-1)]
-
 		return flights
 
 	@staticmethod
 	def _make_url_request(url, driver):
 		driver.get(url)
 		try:
-		    driver.find_element(by = By.CSS_SELECTOR, value='.ZVk93d').click()
+			driver.find_element(by = By.CSS_SELECTOR, value='.ZVk93d').click()
 		except:
 			pass
 		# Waiting and initial XPATH cleaning
@@ -458,7 +460,7 @@ class network_idle(object):
     def __call__(self, driver):
         current_active = driver.execute_script("return window.performance.getEntries().length")
         if current_active == self.last_active:
-            time.sleep(0.2)
+            time.sleep(1)
             return True
         else:
             self.last_active = current_active

@@ -25,7 +25,6 @@ class Flight:
 		self._time_leave = None
 		self._time_arrive = None
 		self._trash = []
-
 		self._parse_args(*args)
 
 	def __repr__(self):
@@ -113,7 +112,10 @@ class Flight:
 				arg = arg[:-2]
 
 			date_format = "%Y-%m-%d %I:%M%p"
-			self._times += [datetime.strptime(self._date + " " + arg, date_format) + delta]
+			try:
+				self._times += [datetime.strptime(self._date + " " + arg, date_format) + delta]
+			except ValueError:
+				self._times += [datetime.strptime(self._date + " " + arg, "%Y-%m-%d %I:%M %p") + delta]
 
 		elif ('hr' in arg or 'min'in arg) and self._flight_time is None:
 			# flight time
@@ -121,8 +123,7 @@ class Flight:
 		elif 'stop' in arg and self._num_stops is None:
 			# num stops
 			self._num_stops = 0 if arg == 'Nonstop' else int(arg.split()[0])
-
-		elif arg.endswith('CO2') and self._co2 is None:
+		elif arg.endswith('CO2e') and self._co2 is None:
 			# co2
 			self._co2 = int(arg.split()[0])
 		elif arg.endswith('emissions') and self._emissions is None:
@@ -140,7 +141,7 @@ class Flight:
 			# 1 stop + time at stop
 			# or multiple stops
 			self._stops = arg
-		elif len(arg) > 0 and arg != 'Separate tickets booked together' and arg != 'Change of airport':
+		elif len(arg) > 0 and arg != 'Separate tickets booked together' and arg != 'Change of airport' and 'CO2e' not in arg and arg != 'Price unavailable':
 			val = arg.split(',')
 			val = [elem.split('Operated')[0] for elem in val]
 			self._airline = ','.join(val)
